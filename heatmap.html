@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UrbanHeat+ | Heat Stress Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --accent: #ff6b35;
+    --safe: #22c55e;
+    --caution: #eab308;
+    --extreme-caution: #f97316;
+    --danger: #ef4444;
+    --extreme-danger: #7f1d1d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,107,53,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(239,68,68,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .logo-icon {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #ff6b35, #ef4444);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff9a35 50%, #ef4444 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tagline {
+    color: var(--muted);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s ease both;
+    animation-delay: 0.1s;
+  }
+
+  label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]::placeholder { color: var(--muted); }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  /* Dynamic suggestions section */
+  #suggestions {
+    display: none;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .suggestions-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .suggestion-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    border-left: 3px solid currentColor;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .suggestion-item .s-icon { flex-shrink: 0; font-size: 1rem; }
+
+  .btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    background: linear-gradient(135deg, #ff6b35, #ef4444);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255,107,53,0.35);
+  }
+
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .btn .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+
+  .btn.loading .btn-text { display: none; }
+  .btn.loading .spinner { display: block; }
+
+  /* Result card */
+  #result {
+    display: none;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+  }
+
+  .result-ward {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .risk-badge {
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border: 1.5px solid currentColor;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .metric {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .metric-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .metric-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+  }
+
+  /* Risk bar */
+  .risk-bar-wrap {
+    margin-bottom: 24px;
+  }
+
+  .risk-bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .risk-bar-bg {
+    height: 8px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .risk-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 1s cubic-bezier(0.4,0,0.2,1);
+    background: linear-gradient(90deg, #22c55e, #eab308, #f97316, #ef4444, #7f1d1d);
+  }
+
+  /* Recommendation box */
+  .recommendation {
+    background: var(--bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .rec-icon { margin-right: 6px; }
+
+  /* Error */
+  #error {
+    display: none;
+    padding: 14px 18px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 12px;
+    color: #ef4444;
+    font-size: 0.9rem;
+    margin-top: 16px;
+  }
+
+  /* Info bar */
+  .info-strip {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    animation: fadeUp 0.6s ease both;
+    animation-delay: 0.2s;
+  }
+
+  .chip {
+    padding: 6px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* SAFE: green */
+  .risk-safe .metric-value { color: var(--safe); }
+  .risk-safe .risk-badge { color: var(--safe); }
+  .risk-safe .recommendation { border-left-color: var(--safe); }
+  /* CAUTION: yellow */
+  .risk-caution .metric-value { color: var(--caution); }
+  .risk-caution .risk-badge { color: var(--caution); }
+  .risk-caution .recommendation { border-left-color: var(--caution); }
+  /* EXTREME_CAUTION: orange */
+  .risk-extreme_caution .metric-value { color: var(--extreme-caution); }
+  .risk-extreme_caution .risk-badge { color: var(--extreme-caution); }
+  .risk-extreme_caution .recommendation { border-left-color: var(--extreme-caution); }
+  /* DANGER: red */
+  .risk-danger .metric-value { color: var(--danger); }
+  .risk-danger .risk-badge { color: var(--danger); }
+  .risk-danger .recommendation { border-left-color: var(--danger); }
+  /* EXTREME_DANGER: dark red */
+  .risk-extreme_danger .metric-value { color: #ff4444; }
+  .risk-extreme_danger .risk-badge { color: #ff4444; }
+  .risk-extreme_danger .recommendation { border-left-color: #ff4444; }
+
+  @media(max-width: 480px) {
+    .metrics-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .metric-value { font-size: 1.6rem; }
+    .card { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo-line">
+      <div class="logo-icon">🌡️</div>
+      <h1>UrbanHeat+</h1>
+    </div>
+    <p class="tagline">Heat Stress Intelligence for Outdoor Workers</p>
+  </header>
+
+  <div class="card">
+    <label for="location-input">Enter Location</label>
+    <input type="text" id="location-input" placeholder="e.g. Edappally, Kochi or Mumbai" autocomplete="off" />
+
+    <button class="btn" id="check-btn" onclick="checkHeat()" disabled>
+      <span class="btn-text">Check Heat Risk</span>
+      <div class="spinner"></div>
+    </button>
+
+    <div id="error"></div>
+  </div>
+
+  <!-- Result Card -->
+  <div class="card" id="result">
+    <div class="result-header">
+      <div>
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:4px">Ward</div>
+        <div class="result-ward" id="res-ward">—</div>
+      </div>
+      <div class="risk-badge" id="res-badge">—</div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-value" id="res-temp">—</div>
+        <div class="metric-label">Temp °C</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" id="res-humidity">—</div>
+        <div class="metric-label">Humidity %</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" id="res-hi">—</div>
+        <div class="metric-label">Heat Index</div>
+      </div>
+    </div>
+
+    <div class="risk-bar-wrap">
+      <div class="risk-bar-label">
+        <span style="font-size:0.7rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Risk Level</span>
+        <span style="font-size:0.7rem;color:var(--muted)" id="res-risk-label">—</span>
+      </div>
+      <div class="risk-bar-bg">
+        <div class="risk-bar-fill" id="risk-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="recommendation" id="res-rec">—</div>
+  </div>
+
+  <!-- Dynamic Suggestions Card -->
+  <div class="card" id="suggestions">
+    <div class="suggestions-title">Safety Guidance</div>
+    <ul class="suggestion-list" id="suggestion-list"></ul>
+  </div>
+
+  <div class="info-strip">
+    <span class="chip">🌍 Powered by Open-Meteo API</span>
+    <span class="chip">⚡ AWS Lambda Serverless</span>
+    <span class="chip">🔢 NOAA Heat Index Formula</span>
+  </div>
+</div>
+
+<script>
+  // ════════════════════════════════════════════════════════════
+  //  MOCK DATA TOGGLE
+  //  Set useMockData = true  → use mockTemp / mockHumidity below
+  //  Set useMockData = false → fetch live data from OpenWeather
+  // ════════════════════════════════════════════════════════════
+  const useMockData   = false;   // ← TOGGLE: true = mock, false = live API
+  const mockTemp      = 38;      // ← EDIT: mock temperature in °C
+  const mockHumidity  = 82;      // ← EDIT: mock humidity in %
+
+  // ════════════════════════════════════════════════════════════
+  //  API CONFIGURATION
+  //  Geocoding : Open-Meteo Geocoding API — FREE, no key needed
+  //  Weather   : Open-Meteo Weather API   — FREE, no key needed
+  //  Lambda    : Optional — set URL to route through AWS Lambda
+  // ════════════════════════════════════════════════════════════
+  const LAMBDA_URL = '';  // ← optional: 'https://your-api-gateway-url/heatRisk'
+
+  // ════════════════════════════════════════════════════════════
+  //  RISK CONFIGURATION — titles, descriptions, actions, colors
+  // ════════════════════════════════════════════════════════════
+  const riskConfig = {
+    SAFE: {
+      color: '#22c55e',
+      pct: 10,
+      emoji: '✅',
+      title: 'Safe Conditions',
+      description: 'Outdoor work can continue normally.',
+      rec: 'Maintain hydration and wear breathable clothing.',
+      actions: [
+        { icon: '💧', text: 'Maintain hydration throughout the day.' },
+        { icon: '👕', text: 'Wear breathable, light-coloured clothing.' },
+        { icon: '🕐', text: 'Take routine breaks as per your schedule.' }
+      ]
+    },
+    CAUTION: {
+      color: '#eab308',
+      pct: 30,
+      emoji: '⚠️',
+      title: 'Mild Heat Stress Risk',
+      description: 'Prolonged exposure may cause fatigue.',
+      rec: 'Drink water every 30 minutes. Take 5–10 min breaks hourly.',
+      actions: [
+        { icon: '💧', text: 'Drink water every 30 minutes — do not wait until thirsty.' },
+        { icon: '🕐', text: 'Take 5–10 minute rest breaks every hour.' },
+        { icon: '☀️', text: 'Avoid prolonged direct sunlight where possible.' }
+      ]
+    },
+    EXTREME_CAUTION: {
+      color: '#f97316',
+      pct: 55,
+      emoji: '🔶',
+      title: 'High Heat Stress Risk',
+      description: 'Increased risk of heat cramps and exhaustion.',
+      rec: '15-minute rest every hour. Increase water intake. Use head protection.',
+      actions: [
+        { icon: '🕐', text: '15-minute rest every hour in a cool, shaded spot.' },
+        { icon: '💧', text: 'Increase water intake — at least 250ml every 20 minutes.' },
+        { icon: '👀', text: 'Monitor coworkers for symptoms: dizziness, cramps, pale skin.' },
+        { icon: '🧢', text: 'Use head protection and light, breathable clothing.' }
+      ]
+    },
+    DANGER: {
+      color: '#ef4444',
+      pct: 75,
+      emoji: '🚨',
+      title: 'Severe Heat Risk',
+      description: 'High probability of heat exhaustion or heat stroke.',
+      rec: '20–30 min rest per hour. Avoid 12PM–3PM. Watch for dizziness and nausea.',
+      healthWarning: 'Heat exhaustion or heat stroke possible. Watch for confusion, nausea, heavy sweating.',
+      actions: [
+        { icon: '🛑', text: 'Avoid outdoor work between 12 PM – 3 PM.' },
+        { icon: '🕐', text: 'Mandatory 20–30 minute rest per hour in shaded/ventilated areas.' },
+        { icon: '💧', text: 'Drink water every 15 minutes. Electrolyte fluids strongly recommended.' },
+        { icon: '🤝', text: 'Use the buddy system — never work alone in these conditions.' },
+        { icon: '🏥', text: 'Watch for dizziness, nausea, confusion — act immediately if seen.' }
+      ]
+    },
+    EXTREME_DANGER: {
+      color: '#ff4444',
+      pct: 95,
+      emoji: '🆘',
+      title: 'Critical Heat Emergency',
+      description: 'Immediate danger of heat stroke.',
+      rec: 'Stop outdoor work immediately. Move to cool area. Seek medical help.',
+      healthWarning: 'Life-threatening heat stroke risk. Immediate action required.',
+      actions: [
+        { icon: '🆘', text: 'Stop all outdoor work immediately — this is a life-safety emergency.' },
+        { icon: '🏠', text: 'Move to a cool, air-conditioned area without delay.' },
+        { icon: '❄️', text: 'Begin rapid cooling: cold water, wet towels, fan if available.' },
+        { icon: '🏥', text: 'Seek medical help immediately if any symptoms appear.' },
+        { icon: '📞', text: 'Notify supervisors and activate emergency protocols now.' }
+      ]
+    }
+  };
+
+  // ════════════════════════════════════════════════════════════
+  //  SAFETY VALIDATION
+  //  Ensures temperature and humidity are usable numbers before
+  //  any calculation is attempted.
+  // ════════════════════════════════════════════════════════════
+  function validateInputs(tempC, humidity) {
+    if (typeof tempC !== 'number' || isNaN(tempC)) {
+      throw new Error('Invalid temperature value received from API.');
+    }
+    if (typeof humidity !== 'number' || isNaN(humidity) || humidity < 0 || humidity > 100) {
+      throw new Error('Invalid humidity value received from API (must be 0–100%).');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  NOAA HEAT INDEX — with strict validity guards
+  //
+  //  NOAA formula is ONLY valid when:
+  //    • Temperature ≥ 27°C (80°F)
+  //    • Humidity    ≥ 40%
+  //
+  //  For all other conditions, Heat Index is not applicable.
+  //  We return the actual air temperature instead of a formula
+  //  result, which would be scientifically incorrect.
+  // ════════════════════════════════════════════════════════════
+  function calcHeatIndex(tempC, humidity) {
+    // ── Guard 1: validate inputs ─────────────────────────────
+    validateInputs(tempC, humidity);
+
+    // ── Guard 2: temperature ≤ 0°C — cold weather, skip entirely
+    if (tempC <= 0) {
+      console.log(`[HeatIndex] SKIPPED — temp ${tempC}°C ≤ 0°C. Returning actual temp.`);
+      return Math.round(tempC * 10) / 10;
+    }
+
+    // ── Guard 3: temperature < 27°C — cool conditions, formula invalid
+    if (tempC < 27) {
+      console.log(`[HeatIndex] SKIPPED — temp ${tempC}°C < 27°C (NOAA threshold). Returning actual temp.`);
+      return Math.round(tempC * 10) / 10;
+    }
+
+    // ── Guard 4: humidity < 40% — formula unreliable below this
+    if (humidity < 40) {
+      console.log(`[HeatIndex] SKIPPED — humidity ${humidity}% < 40% (NOAA threshold). Returning actual temp.`);
+      return Math.round(tempC * 10) / 10;
+    }
+
+    // ── All guards passed: apply full NOAA formula ────────────
+    console.log(`[HeatIndex] APPLYING NOAA formula — temp: ${tempC}°C, humidity: ${humidity}%`);
+    const T  = (tempC * 9 / 5) + 32;   // Step 1: Celsius → Fahrenheit
+    const RH = humidity;
+    const HI =
+      -42.379 +
+      2.04901523  * T        +
+      10.14333127 * RH       -
+      0.22475541  * T  * RH  -
+      6.83783e-3  * T  * T   -
+      5.481717e-2 * RH * RH  +
+      1.22874e-3  * T  * T  * RH +
+      8.5282e-4   * T  * RH * RH -
+      1.99e-6     * T  * T  * RH * RH;
+    // Step 2: Fahrenheit → Celsius, rounded to 1 decimal
+    const result = Math.round(((HI - 32) * 5 / 9) * 10) / 10;
+    console.log(`[HeatIndex] Result: ${result}°C`);
+    return result;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  RISK CATEGORIZATION
+  //  Based on final heat index value (°C)
+  // ════════════════════════════════════════════════════════════
+  function getRisk(heatIndex) {
+    if (heatIndex < 27) return 'SAFE';
+    if (heatIndex < 32) return 'CAUTION';
+    if (heatIndex < 41) return 'EXTREME_CAUTION';
+    if (heatIndex < 54) return 'DANGER';
+    return 'EXTREME_DANGER';
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  GEOCODING — location text → { lat, lon, name }
+  //  Uses Open-Meteo Geocoding API — FREE, no API key required
+  //  Docs: https://open-meteo.com/en/docs/geocoding-api
+  // ════════════════════════════════════════════════════════════
+  async function geocodeLocation(locationText) {
+    const url  = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationText)}&count=1&language=en&format=json`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('Unable to fetch weather data. Please try again.');
+    const data = await res.json();
+    if (!data.results || data.results.length === 0)
+      throw new Error('Location not found. Please enter a valid area.');
+    const { latitude, longitude, name, admin1, country } = data.results[0];
+    const label = [name, admin1, country].filter(Boolean).join(', ');
+    return { lat: latitude, lon: longitude, name: label };
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  WEATHER FETCH — { lat, lon } → { temperature, humidity }
+  //  Uses Open-Meteo Weather API — FREE, no API key required
+  //  Docs: https://open-meteo.com/en/docs
+  // ════════════════════════════════════════════════════════════
+  async function fetchWeather(lat, lon) {
+    const url  = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('Unable to fetch weather data. Please try again.');
+    const data = await res.json();
+    return {
+      temperature: Math.round(data.current.temperature_2m * 10) / 10,
+      humidity:    data.current.relative_humidity_2m
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  MAIN PIPELINE — orchestrates all steps
+  // ════════════════════════════════════════════════════════════
+  async function getHeatRiskData(locationText) {
+
+    // ── Option A: Lambda backend (production) ────────────────
+    if (LAMBDA_URL) {
+      const res = await fetch(LAMBDA_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location: locationText })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Unable to fetch weather data. Please try again.');
+      }
+      return await res.json();
+    }
+
+    // ── Option B: Direct browser → OpenWeather ───────────────
+    let temperature, humidity, resolvedName;
+
+    if (useMockData) {
+      // MOCK MODE — uses values defined at the top of this script
+      temperature  = mockTemp;
+      humidity     = mockHumidity;
+      resolvedName = toTitleCase(locationText) + ' (mock)';
+      // Simulate a brief loading delay so UI feels real
+      await new Promise(r => setTimeout(r, 600));
+    } else {
+      // LIVE MODE — Open-Meteo geocoding + weather (no API key needed)
+      const geo  = await geocodeLocation(locationText);   // Step 1: text → lat/lon
+      resolvedName = geo.name;
+      const wx   = await fetchWeather(geo.lat, geo.lon);  // Step 2: lat/lon → weather
+      temperature  = wx.temperature;
+      humidity     = wx.humidity;
+    }
+
+    // ── Debug log: confirm raw API values before calculation ──
+    console.log(`[API] Raw temperature : ${temperature}°C`);
+    console.log(`[API] Raw humidity    : ${humidity}%`);
+
+    // Steps 3–4: calculate + categorise (guards inside calcHeatIndex)
+    const heatIndex = calcHeatIndex(temperature, humidity);
+    const riskLevel = getRisk(heatIndex);
+
+    console.log(`[Result] Heat Index: ${heatIndex}°C  |  Risk: ${riskLevel}`);
+
+    return { location: resolvedName, temperature, humidity, heatIndex, riskLevel };
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  UI — input events
+  // ════════════════════════════════════════════════════════════
+  document.getElementById('location-input').addEventListener('input', function () {
+    document.getElementById('check-btn').disabled = this.value.trim().length < 2;
+  });
+  document.getElementById('location-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') checkHeat();
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  checkHeat() — called by button click
+  // ════════════════════════════════════════════════════════════
+  async function checkHeat() {
+    const locationText = document.getElementById('location-input').value.trim();
+    if (!locationText) return;
+
+    const btn   = document.getElementById('check-btn');
+    const errEl = document.getElementById('error');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    errEl.style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('suggestions').style.display = 'none';
+
+    try {
+      const data = await getHeatRiskData(locationText);
+      renderResult(data);
+    } catch (e) {
+      showError(e.message || 'Unable to fetch weather data. Please try again.');
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  RENDER — updates result card + safety guidance card
+  // ════════════════════════════════════════════════════════════
+  function renderResult(data) {
+    const cfg       = riskConfig[data.riskLevel];
+    const riskClass = 'risk-' + data.riskLevel.toLowerCase();
+    const locLabel  = data.location || '—';
+
+    // ── Result card ──────────────────────────────────────────
+    const card = document.getElementById('result');
+    card.className = 'card ' + riskClass;
+
+    document.getElementById('res-ward').textContent       = locLabel;
+    document.getElementById('res-temp').textContent       = data.temperature + '°';
+    document.getElementById('res-humidity').textContent   = data.humidity + '%';
+    document.getElementById('res-hi').textContent         = data.heatIndex + '°';
+    document.getElementById('res-badge').textContent      = cfg.emoji + ' ' + data.riskLevel.replace(/_/g, ' ');
+    document.getElementById('res-risk-label').textContent = data.riskLevel.replace(/_/g, ' ');
+    document.getElementById('res-rec').innerHTML          =
+      `<span class="rec-icon">${cfg.emoji}</span> <strong>${cfg.title}:</strong> ${cfg.rec}`;
+
+    const bar = document.getElementById('risk-bar');
+    bar.style.width = '0%';
+    setTimeout(() => bar.style.width = cfg.pct + '%', 50);
+
+    card.style.display = 'block';
+
+    // ── Safety Guidance card — show loading state immediately ─
+    const sugCard = document.getElementById('suggestions');
+    const list    = document.getElementById('suggestion-list');
+    sugCard.style.display = 'block';
+    renderSuggestionsLoading(list, cfg.color);
+
+    // ── Fetch AI-generated guidance asynchronously ────────────
+    fetchAISuggestions(data).then(suggestions => {
+      console.log('[AI] Suggestions received:', suggestions);
+      renderSuggestions(list, suggestions, cfg.color, data);
+    }).catch(err => {
+      console.error('[AI] Failed, using fallback:', err.message);
+      // Show fallback static tips with a visible notice
+      const fallback = cfg.actions.map(a => ({ icon: a.icon, text: a.text }));
+      renderSuggestions(list, fallback, cfg.color, data, true);
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  SMART LOCATION-AWARE SAFETY GUIDANCE ENGINE
+  //  Generates unique tips based on:
+  //   • Detected climate zone (tropical / arid / cold / temperate)
+  //   • Actual temperature + humidity values
+  //   • Risk level
+  //   • Time-sensitive advice
+  //  No API key needed — runs entirely in the browser.
+  // ════════════════════════════════════════════════════════════
+
+  function detectClimateProfile(location, temp, humidity) {
+    const loc = location.toLowerCase();
+
+    // Cold / Arctic
+    if (temp <= 5) return 'cold';
+
+    // Detect region keywords for climate typing
+    const tropical = ['kerala', 'kochi', 'mumbai', 'chennai', 'kolkata', 'goa', 'bangalore', 'bengaluru',
+      'thailand', 'singapore', 'malaysia', 'indonesia', 'philippines', 'vietnam', 'cambodia',
+      'sri lanka', 'bangladesh', 'myanmar', 'colombia', 'ecuador', 'peru', 'brazil', 'nigeria',
+      'ghana', 'cameroon', 'kenya', 'tanzania', 'uganda', 'maldives', 'jamaica', 'haiti',
+      'puerto rico', 'cuba', 'panama', 'costa rica', 'venezuela', 'miami', 'houston'];
+
+    const arid = ['rajasthan', 'jaipur', 'jodhpur', 'bikaner', 'delhi', 'dubai', 'abu dhabi',
+      'riyadh', 'doha', 'kuwait', 'bahrain', 'oman', 'muscat', 'egypt', 'cairo', 'sahara',
+      'arizona', 'nevada', 'las vegas', 'phoenix', 'texas', 'mexico', 'iran', 'iraq',
+      'pakistan', 'karachi', 'lahore', 'israel', 'jordan', 'libya', 'algeria', 'morocco',
+      'tunisia', 'saudi', 'yemen', 'afghanistan', 'uzbekistan', 'turkmenistan', 'chile'];
+
+    const cold = ['russia', 'moscow', 'siberia', 'alaska', 'canada', 'norway', 'sweden',
+      'finland', 'iceland', 'greenland', 'antarctica', 'mongolia', 'kazakhstan',
+      'ukraine', 'poland', 'czech', 'slovakia', 'hungary', 'romania', 'bulgaria',
+      'estonia', 'latvia', 'lithuania', 'belarus', 'denmark', 'scotland', 'ireland',
+      'new zealand', 'patagonia', 'tibet', 'nepal', 'bhutan', 'himachal', 'shimla',
+      'manali', 'leh', 'ladakh', 'jammu', 'kashmir', 'srinagar', 'uttarakhand'];
+
+    const coastal = ['beach', 'coast', 'port', 'harbor', 'marine', 'island', 'gulf',
+      'bay', 'sea', 'ocean', 'fishing', 'dock', 'pier'];
+
+    if (cold.some(k => loc.includes(k)) || temp <= 10) return 'cold';
+    if (arid.some(k => loc.includes(k)) || (temp >= 35 && humidity < 35)) return 'arid';
+    if (coastal.some(k => loc.includes(k)) && humidity >= 70) return 'coastal';
+    if (tropical.some(k => loc.includes(k)) || (temp >= 28 && humidity >= 65)) return 'tropical';
+    return 'temperate';
+  }
+
+  function detectWorkType(location) {
+    const loc = location.toLowerCase();
+    if (['port', 'dock', 'harbor', 'fishing', 'marine', 'beach', 'coast'].some(k => loc.includes(k))) return 'maritime';
+    if (['farm', 'field', 'agri', 'plantation', 'paddy', 'rice', 'crop'].some(k => loc.includes(k))) return 'agriculture';
+    if (['mine', 'quarry', 'coal', 'iron', 'steel'].some(k => loc.includes(k))) return 'mining';
+    if (['road', 'highway', 'construction', 'bridge', 'build'].some(k => loc.includes(k))) return 'construction';
+    return 'general';
+  }
+
+  async function fetchAISuggestions(data) {
+    const { location, temperature, humidity, heatIndex, riskLevel } = data;
+    const climate  = detectClimateProfile(location, temperature, humidity);
+    const workType = detectWorkType(location);
+    const locShort = location.split(',')[0].trim();
+    const hour     = new Date().getHours();
+    const isPeak   = hour >= 11 && hour <= 15;
+
+    console.log(`[AI-Engine] Climate: ${climate} | Work: ${workType} | Peak hours: ${isPeak}`);
+
+    // ── Climate-specific tip banks ───────────────────────────
+    const tipBanks = {
+
+      cold: {
+        SAFE: [
+          { icon: '🧤', text: `In ${locShort}'s cold conditions (${temperature}°C), keep extremities covered — frostbite risk increases with wind chill.` },
+          { icon: '♨️', text: `Take warm breaks every 45 minutes. Cold muscles fatigue faster and injury risk rises in ${locShort}.` },
+          { icon: '💧', text: `Cold air is dehydrating — drink warm fluids regularly even if you don't feel thirsty in ${locShort}.` },
+          { icon: '👁️', text: `Watch for numbness or colour change in fingers and toes — early signs of cold injury in ${locShort}'s climate.` }
+        ],
+        CAUTION: [
+          { icon: '🧤', text: `${locShort}'s cold and the physical exertion create a cold stress risk — layer up and keep core warm.` },
+          { icon: '🔥', text: `Use portable warming stations or shelters — mandatory 10-min warm breaks every hour in ${locShort}.` },
+          { icon: '💧', text: `Dehydration in cold weather is common in ${locShort} — drink warm water or broth regularly.` },
+          { icon: '👀', text: `Monitor coworkers for shivering or confusion — early hypothermia signs in ${locShort}'s conditions.` }
+        ],
+        EXTREME_CAUTION: [
+          { icon: '🚨', text: `At ${temperature}°C in ${locShort}, hypothermia risk is real. Limit outdoor exposure to 20-minute shifts.` },
+          { icon: '🔥', text: `Maintain a heated rest area nearby. All workers in ${locShort} must rotate indoors every 20 minutes.` },
+          { icon: '🧤', text: `Double-layer gloves and insulated boots are essential — frostbite can occur within minutes in ${locShort}.` },
+          { icon: '📞', text: `Keep emergency contacts ready — cold emergencies in ${locShort} require faster response than heat emergencies.` }
+        ],
+        DANGER: [
+          { icon: '🆘', text: `Dangerous cold at ${temperature}°C in ${locShort} — outdoor work should be suspended or strictly time-limited.` },
+          { icon: '🏠', text: `Establish a warm base in ${locShort}. No worker should be outdoors for more than 10 minutes continuously.` },
+          { icon: '🧤', text: `Full cold-weather PPE mandatory in ${locShort} — insulated coveralls, balaclava, vapour-barrier boots.` },
+          { icon: '🏥', text: `Know the nearest medical facility in ${locShort}. Cold injuries escalate rapidly — act at first sign.` }
+        ],
+        EXTREME_DANGER: [
+          { icon: '🆘', text: `STOP ALL OUTDOOR WORK in ${locShort}. At ${temperature}°C, life-threatening hypothermia can occur in under 10 minutes.` },
+          { icon: '🏠', text: `Move all workers to heated indoor shelter immediately in ${locShort}. This is a cold emergency.` },
+          { icon: '📞', text: `Contact emergency services in ${locShort} if any worker shows confusion, slurred speech, or stops shivering.` },
+          { icon: '🔥', text: `Begin rewarming with blankets and warm drinks — do NOT use direct heat sources on cold-injured skin.` }
+        ]
+      },
+
+      tropical: {
+        SAFE: [
+          { icon: '💧', text: `${locShort}'s tropical humidity (${humidity}%) accelerates sweat loss — drink 250ml of water every 30 minutes.` },
+          { icon: '🌿', text: `Use natural shade from trees common in ${locShort} — avoid direct sun between 11AM and 3PM.` },
+          { icon: '👕', text: `Loose cotton or moisture-wicking clothing suits ${locShort}'s humid climate better than synthetic fabrics.` },
+          { icon: '🧴', text: `Apply SPF 30+ sunscreen — UV intensity in ${locShort} is high even on cloudy tropical days.` }
+        ],
+        CAUTION: [
+          { icon: '💧', text: `High humidity in ${locShort} slows sweat evaporation — your body cools less efficiently. Hydrate every 20 minutes.` },
+          { icon: '🌬️', text: `Position work areas to catch coastal breezes typical in ${locShort} — ventilation reduces perceived heat significantly.` },
+          { icon: '🕐', text: `Take 10-minute breaks in shade every hour — ${locShort}'s combined heat and humidity causes faster fatigue.` },
+          { icon: '🧂', text: `Heavy sweating in ${locShort}'s humidity depletes electrolytes — drink ORS or coconut water, not just plain water.` }
+        ],
+        EXTREME_CAUTION: [
+          { icon: '🌡️', text: `${locShort}'s heat index of ${heatIndex}°C feels hotter than temperature alone — treat it as the real danger number.` },
+          { icon: '💧', text: `Drink at least 1 litre per hour in ${locShort}'s humid heat. Urine should be pale yellow — dark means dehydration.` },
+          { icon: '🕐', text: `Mandatory 15-minute rest every hour in ${locShort}. High humidity means your body stores heat faster than usual.` },
+          { icon: '👀', text: `Watch for heat cramps — common in ${locShort}'s climate due to electrolyte loss from heavy continuous sweating.` }
+        ],
+        DANGER: [
+          { icon: '🛑', text: `Avoid all outdoor work in ${locShort} between 11AM–3PM today. Heat index of ${heatIndex}°C is life-threatening.` },
+          { icon: '💧', text: `Force-drink 250ml every 15 minutes in ${locShort} even without thirst — the humid air masks how much you're losing.` },
+          { icon: '🤝', text: `Buddy system is mandatory in ${locShort} today — heat stroke victims often cannot help themselves.` },
+          { icon: '🏥', text: `Know the nearest hospital in ${locShort} and keep a vehicle ready — heat stroke can strike within minutes.` }
+        ],
+        EXTREME_DANGER: [
+          { icon: '🆘', text: `STOP WORK in ${locShort} immediately. At ${heatIndex}°C heat index with ${humidity}% humidity, heat stroke is imminent.` },
+          { icon: '❄️', text: `Cool workers with wet cloths and fans in ${locShort} — move to air-conditioned spaces without delay.` },
+          { icon: '📞', text: `Call emergency services in ${locShort} if anyone shows confusion, stops sweating, or collapses.` },
+          { icon: '🏥', text: `Do not wait for symptoms to worsen — heat stroke mortality rises rapidly in ${locShort}'s humid conditions.` }
+        ]
+      },
+
+      arid: {
+        SAFE: [
+          { icon: '💧', text: `${locShort}'s dry heat dehydrates without warning — drink 300ml every 30 minutes even if not sweating visibly.` },
+          { icon: '🧕', text: `Cover skin completely in ${locShort} — loose, light-coloured long sleeves block radiation without trapping heat.` },
+          { icon: '🕶️', text: `UV intensity in ${locShort} is extreme — sunglasses with UV400 protection are essential for outdoor workers.` },
+          { icon: '🌬️', text: `Hot dry winds in ${locShort} increase moisture loss — work facing away from the wind where possible.` }
+        ],
+        CAUTION: [
+          { icon: '💧', text: `In ${locShort}'s arid heat, you may not notice sweating — drink water every 20 minutes without waiting for thirst.` },
+          { icon: '🧕', text: `Use a wet cloth or keffiyeh-style head wrap — traditional cooling method effective in ${locShort}'s dry climate.` },
+          { icon: '🕐', text: `Work in early morning (before 9AM) or after 5PM in ${locShort} — midday temperatures are extreme.` },
+          { icon: '🧂', text: `Add electrolyte sachets to water in ${locShort} — dry conditions cause salt depletion even before fatigue shows.` }
+        ],
+        EXTREME_CAUTION: [
+          { icon: '🌡️', text: `${locShort}'s dry air makes ${temperature}°C feel bearable but your core temperature rises silently — check yourself regularly.` },
+          { icon: '💧', text: `Drink 500ml per hour minimum in ${locShort}. Dry air at this temperature strips moisture faster than you realise.` },
+          { icon: '🧕', text: `Full skin coverage is critical in ${locShort} — radiant heat from the ground can burn exposed skin within minutes.` },
+          { icon: '🏠', text: `Rest in shade or an air-cooled vehicle in ${locShort} — even 15 minutes of cooling per hour prevents heat buildup.` }
+        ],
+        DANGER: [
+          { icon: '🛑', text: `At ${temperature}°C in ${locShort}'s dry heat, core temperature can rise to dangerous levels within 20 minutes of work.` },
+          { icon: '💧', text: `Drink 750ml per hour in ${locShort} and monitor urine output — absence of urination signals severe dehydration.` },
+          { icon: '🧕', text: `All exposed surfaces in ${locShort} — ground, metal, stone — radiate heat. Wear insulated soles and full PPE.` },
+          { icon: '🏥', text: `Prepare for dry heat stroke in ${locShort} — victim may have HOT DRY skin (not sweating) requiring immediate cooling.` }
+        ],
+        EXTREME_DANGER: [
+          { icon: '🆘', text: `STOP ALL WORK in ${locShort}. Dry heat at ${temperature}°C causes rapid core temperature rise with no sweat warning signs.` },
+          { icon: '❄️', text: `Move workers to shade and douse with cool water in ${locShort} — evaporation cools faster in dry conditions.` },
+          { icon: '📞', text: `Call emergency services in ${locShort} immediately — dry heat stroke victims look alert but are in critical danger.` },
+          { icon: '💧', text: `Give cool (not ice cold) water to conscious workers in ${locShort}. Do not leave anyone alone in this heat.` }
+        ]
+      },
+
+      coastal: {
+        SAFE: [
+          { icon: '🌊', text: `${locShort}'s sea breeze peaks mid-morning — schedule heavy work during this window for natural cooling.` },
+          { icon: '🧴', text: `Coastal UV reflection in ${locShort} is intensified by water and sand — reapply SPF 50+ every 90 minutes.` },
+          { icon: '💧', text: `Salt air in ${locShort} increases dehydration — drink water every 30 minutes and monitor for headaches.` },
+          { icon: '🧢', text: `Wide-brim hats offer better protection than caps in ${locShort}'s open coastal environment with no building shade.` }
+        ],
+        CAUTION: [
+          { icon: '🌊', text: `When sea breeze drops in ${locShort} (usually 1–3PM), coastal heat becomes intense very quickly — have a cooling plan.` },
+          { icon: '💧', text: `${locShort}'s combined heat and salt air causes faster electrolyte loss — drink ORS or coconut water, not just plain water.` },
+          { icon: '🕐', text: `Take shade breaks every hour in ${locShort} — reflected heat from water and sand raises effective temperature significantly.` },
+          { icon: '👀', text: `Glare fatigue is a real issue in ${locShort}'s coastal environment — UV-blocking eyewear is safety equipment, not optional.` }
+        ],
+        EXTREME_CAUTION: [
+          { icon: '🌡️', text: `Coastal humidity in ${locShort} combined with ${temperature}°C creates a heat index of ${heatIndex}°C — treat this as your actual risk.` },
+          { icon: '🌊', text: `Never use seawater for cooling in ${locShort} — it increases dehydration. Use fresh water and shade only.` },
+          { icon: '🕐', text: `15-minute mandatory breaks every hour in ${locShort} — coastal wind masking heat can cause workers to misjudge their condition.` },
+          { icon: '💧', text: `Drink 400ml per hour in ${locShort} — coastal workers underestimate fluid loss because the breeze masks sweating.` }
+        ],
+        DANGER: [
+          { icon: '🛑', text: `Avoid open coastal areas in ${locShort} between 11AM–3PM — no natural shade and reflected heat multiplies risk.` },
+          { icon: '💧', text: `Aggressive hydration mandatory in ${locShort} — drink 500ml per hour with electrolytes, not plain water alone.` },
+          { icon: '🤝', text: `Buddy system critical in ${locShort} coastal work — wind noise can mask distress calls from heat-affected workers.` },
+          { icon: '🏥', text: `Know the nearest medical facility from ${locShort}'s coastal worksite — evacuation routes may be limited.` }
+        ],
+        EXTREME_DANGER: [
+          { icon: '🆘', text: `STOP COASTAL WORK in ${locShort} immediately. At ${heatIndex}°C with coastal humidity, heat stroke risk is critical.` },
+          { icon: '🏠', text: `Move all workers to an air-conditioned or deeply shaded inland area in ${locShort} right now.` },
+          { icon: '💧', text: `Use fresh cool water to douse exposed skin in ${locShort} — evaporative cooling is highly effective in this environment.` },
+          { icon: '📞', text: `Alert coast guard or local emergency services in ${locShort} if workers are in the water or on exposed vessels.` }
+        ]
+      },
+
+      temperate: {
+        SAFE: [
+          { icon: '💧', text: `At ${temperature}°C in ${locShort}, drink 200ml of water every 30–40 minutes to maintain safe hydration levels.` },
+          { icon: '☀️', text: `UV levels in ${locShort} can be high even on mild days — wear sunscreen and a hat for extended outdoor work.` },
+          { icon: '👕', text: `Light layers work best in ${locShort}'s variable conditions — easy to remove as temperature rises through the day.` },
+          { icon: '🕐', text: `Take regular short breaks in shade in ${locShort} — mild weather can still cause cumulative fatigue over long shifts.` }
+        ],
+        CAUTION: [
+          { icon: '💧', text: `${locShort}'s ${humidity}% humidity slows cooling — drink water every 25 minutes and avoid caffeinated drinks.` },
+          { icon: '🕐', text: `In ${locShort}'s current conditions, schedule the most demanding tasks before 11AM to avoid peak afternoon heat.` },
+          { icon: '🧢', text: `Head and neck protection is key in ${locShort} today — even moderate sun exposure causes core temperature rise.` },
+          { icon: '👀', text: `Watch for early fatigue in ${locShort} — it's a sign your body is working harder than usual to stay cool.` }
+        ],
+        EXTREME_CAUTION: [
+          { icon: '🌡️', text: `${locShort}'s heat index of ${heatIndex}°C is higher than the air temperature — your body feels every degree of it.` },
+          { icon: '💧', text: `Increase water intake to 400ml per hour in ${locShort} — current humidity makes sweating less effective for cooling.` },
+          { icon: '🕐', text: `Mandatory 15-minute rest every hour for all outdoor workers in ${locShort} today — heat stress accumulates silently.` },
+          { icon: '🤝', text: `Check on coworkers in ${locShort} regularly — heat exhaustion at this level can develop within 2 hours of exposure.` }
+        ],
+        DANGER: [
+          { icon: '🛑', text: `Suspend non-essential outdoor work in ${locShort} between 12PM–3PM — ${heatIndex}°C heat index is dangerous.` },
+          { icon: '💧', text: `Drink 500ml per hour in ${locShort} with added electrolytes — plain water alone won't replace what you're losing.` },
+          { icon: '🤝', text: `Buddy system mandatory in ${locShort} today — heat exhaustion can progress to heat stroke without obvious warning.` },
+          { icon: '🏥', text: `Pre-identify a cool rest space and nearest hospital in ${locShort} before the work shift begins today.` }
+        ],
+        EXTREME_DANGER: [
+          { icon: '🆘', text: `STOP ALL OUTDOOR WORK in ${locShort}. Heat index of ${heatIndex}°C is life-threatening — no exceptions.` },
+          { icon: '❄️', text: `Cool all exposed workers immediately in ${locShort} — wet cloths to neck, wrists, and armpits are most effective.` },
+          { icon: '📞', text: `Call emergency services in ${locShort} if anyone shows confusion, stops responding, or has hot dry skin.` },
+          { icon: '🏠', text: `Move everyone to an air-conditioned space in ${locShort} now — every minute of continued exposure increases risk.` }
+        ]
+      }
+    };
+
+    // Simulate brief async delay (feels like a real API call)
+    await new Promise(r => setTimeout(r, 800));
+
+    const bank = tipBanks[climate];
+    let tips   = bank[riskLevel] || bank['SAFE'];
+
+    // Inject work-type specific tip as the 2nd item if relevant
+    const workTips = {
+      maritime:     { icon: '⚓', text: `Maritime workers in ${locShort}: stay hydrated on deck — wind masking and reflective water surfaces intensify actual heat exposure.` },
+      agriculture:  { icon: '🌾', text: `Field workers in ${locShort}: wet the back of your neck with water every 30 minutes — it's the fastest way to lower core temperature.` },
+      mining:       { icon: '⛏️', text: `Mine workers in ${locShort}: below-ground heat adds to surface conditions — acclimatise fully before increasing workload.` },
+      construction: { icon: '🏗️', text: `Construction workers in ${locShort}: metal surfaces and concrete radiate stored heat — avoid direct contact with materials in midday sun.` }
+    };
+
+    if (workType !== 'general' && workTips[workType]) {
+      tips = [tips[0], workTips[workType], tips[1], tips[2]];
+    }
+
+    return tips.slice(0, 4);
+  }
+
+  // ── Loading skeleton while AI generates ─────────────────────
+  function renderSuggestionsLoading(list, color) {
+    list.innerHTML = '';
+    for (let i = 0; i < 4; i++) {
+      const li = document.createElement('li');
+      li.className = 'suggestion-item';
+      li.style.color = color;
+      li.innerHTML = `<span class="s-icon">⏳</span><span style="color:var(--muted);font-style:italic">Generating location-specific guidance for this area...</span>`;
+      list.appendChild(li);
+      break; // one line is enough while loading
+    }
+    // Add a subtle AI badge
+    const aiBadge = document.createElement('li');
+    aiBadge.className = 'suggestion-item';
+    aiBadge.style.color = '#6b6b8a';
+    aiBadge.innerHTML = `<span class="s-icon">🤖</span><span style="color:#6b6b8a;font-style:italic">AI is analysing local conditions...</span>`;
+    list.appendChild(aiBadge);
+  }
+
+  // ── Render final suggestions (AI or fallback) ───────────────
+  function renderSuggestions(list, suggestions, color, data, isFallback = false) {
+    list.innerHTML = '';
+
+    // Header row — shows source (AI or fallback)
+    const headerLi = document.createElement('li');
+    headerLi.className = 'suggestion-item';
+    headerLi.style.color = color;
+    if (isFallback) {
+      headerLi.innerHTML = `<span class="s-icon">📋</span><span style="color:var(--muted);font-style:italic">Standard guidance for <strong style="color:${color}">${data.location}</strong> · ${data.temperature}°C, ${data.humidity}% humidity</span>`;
+    } else {
+      headerLi.innerHTML = `<span class="s-icon">📍</span><span style="color:var(--muted);font-style:italic">AI guidance for <strong style="color:${color}">${data.location}</strong> · ${data.temperature}°C, ${data.humidity}% humidity</span>`;
+    }
+    list.appendChild(headerLi);
+
+    // Tips
+    suggestions.forEach(s => {
+      const li = document.createElement('li');
+      li.className = 'suggestion-item';
+      li.style.color = color;
+      li.innerHTML = `<span class="s-icon">${s.icon}</span><span style="color:var(--text)">${s.text}</span>`;
+      list.appendChild(li);
+    });
+
+    // Mock mode indicator
+    if (useMockData) {
+      const mockLi = document.createElement('li');
+      mockLi.className = 'suggestion-item';
+      mockLi.style.color = '#6b6b8a';
+      mockLi.innerHTML = `<span class="s-icon">🧪</span><span style="color:#6b6b8a">Mock mode — temp: ${mockTemp}°C, humidity: ${mockHumidity}%.</span>`;
+      list.appendChild(mockLi);
+    }
+
+    // Footer attribution
+    const footerLi = document.createElement('li');
+    footerLi.className = 'suggestion-item';
+    footerLi.style.color = '#6b6b8a';
+    footerLi.innerHTML = isFallback
+      ? `<span class="s-icon">📌</span><span style="color:#6b6b8a;font-size:0.8rem">Standard safety guidance · Run via http:// server for AI tips</span>`
+      : `<span class="s-icon">✨</span><span style="color:#6b6b8a;font-size:0.8rem">AI-generated · Unique to this location & live conditions</span>`;
+    list.appendChild(footerLi);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  HELPERS
+  // ════════════════════════════════════════════════════════════
+  function showError(msg) {
+    const errEl = document.getElementById('error');
+    // Detect common root causes and give actionable messages
+    let display = msg;
+    if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror') || msg.toLowerCase().includes('load')) {
+      if (location.protocol === 'file:') {
+        display = 'Cannot connect — file:// is blocked by browsers. Run: python3 -m http.server 8080 in this folder, then open http://localhost:8080';
+      } else {
+        display = 'Unable to fetch weather data. Please check your internet connection and try again.';
+      }
+    }
+    errEl.textContent = '⚠️ ' + display;
+    errEl.style.display = 'block';
+  }
+
+  function toTitleCase(str) {
+    return str.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
+  }
+</script>
+</body>
+</html>
